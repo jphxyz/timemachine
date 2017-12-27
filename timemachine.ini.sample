@@ -1,0 +1,31 @@
+[Main_Settings]
+Coin_To_BUY = BCH
+Sell_Percent_Of_Available_Balance = 100
+Sleep_Minutes = 90
+ 
+[Demo_Mode]
+Active = 1
+ 
+[Submit_Tip]
+Active = 0
+Coin = DOT
+Tip_Amount_per_User = 50
+To_Last_Active_Users = 3
+ 
+[Missing_API_Data]
+BaseMinTrade = { "BTC": 0.0005, "LTC": 0.01, "DOGE": 10.0, "NZDT": 1.0 }
+SuspendedMarkets = ["XPL", "TRL", "HTML5"]
+TradeFee = 0.2
+MinimumTipAmounts = { "DOT": 50 }
+ 
+[Coins_To_SELL_and_Stop_at_Balance]
+SYMBOL = BALANCE
+BTC = 2.5
+DGB = 0
+MZC = 1.0
+PPC = 0
+ZET = 0
+XMY = 0
+NMC = 0
+TRC = 0
+UNO = 0
