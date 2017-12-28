@@ -1,16 +1,6 @@
 #!/usr/bin/env python
 
 '''
-Original code by CoinUser can be found in this forum post:
-https://www.cryptopia.co.nz/Forum/Thread/544
-
-Unclear what license to use because none was specified in original forum post,
-but their comments suggest something like a BSD 3-clause license, which is what
-I'm including here. It's also possible they wanted it to be in the public domain,
-but BSD seems more appropriate and not much more restrictive anyway.
-'''
-
-'''
 Copyright (c) 2016, CoinUser
 All rights reserved.
 
@@ -37,10 +27,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
 
-import sys
-import ConfigParser
-import json
-import time
+'''
+Original code by CoinUser can be found in this forum post:
+https://www.cryptopia.co.nz/Forum/Thread/544
+
+Unclear what license to use because none was specified in original forum post,
+but their comments suggest something like a BSD 3-clause license, which is what
+I'm including here. It's also possible they wanted it to be in the public domain,
+but BSD seems more appropriate and not much more restrictive anyway.
+'''
+
+import ConfigParser, json, os, sys, time
 from Module.Interface import Api
 
 ### get api data
@@ -50,14 +47,12 @@ def Wrapper(Exchange, Action, ActionData):
     Data = x()
     return Data
 
-location = str(sys.path[0]) + str('/')
-
 # Dramatic startup messages
 zzz = 0.07
 print ' ---------------------------------------------------------------------------'
 print ''
 sys.stdout.write('{:<26}'.format(''))
-for letter in ['T', 'I', 'M', 'E', 'M', 'A', 'C', 'H', 'I', 'N', 'E' ]:
+for letter in 'TIMEMACHINE':
     sys.stdout.write(' ' + letter)
     time.sleep(zzz)
     sys.stdout.flush()
@@ -70,11 +65,11 @@ time.sleep(zzz * 7)
 print '{:>76}'.format('by CoinUser')
 print ' ---------------------------------------------------------------------------'
 
-Loop = 1
-while 1 == Loop:
+while True:
     ###read conf data
+    cfgloc = os.path.join(sys.path[0], 'config', 'timemachine.ini')
     config = ConfigParser.ConfigParser()
-    config.read(location + 'timemachine.ini')
+    config.read(cfgloc)
     ConfDict = {}
     for section in config.sections():
         ConfDict[section] = {}

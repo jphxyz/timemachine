@@ -1,14 +1,14 @@
 #!/usr/bin/python
 import time
 import json
-import sys
+import sys, os
 import ConfigParser
 from WrapperCryptopia import Cryptopia
 
 
-location = str(sys.path[0]) + str("/Module/")
+cfgloc = os.path.join(sys.path[0], 'config', 'Interface.ini')
 config = ConfigParser.ConfigParser()
-config.read(location + str("Interface.ini"))
+config.read(cfgloc)
 ConfDict = {}
 for section in config.sections():
     ConfDict[section] = {}
@@ -18,7 +18,7 @@ for section in config.sections():
 if (len(ConfDict) == 0):
     print " "
     print " !!! ERROR !!!"
-    print " Interface.ini not found in Module folder !"
+    print " Interface.ini not found in 'config' directory!"
     exit()
 
 TimeInterval = int(ConfDict['Main_Settings']['sleep_on_error'])
