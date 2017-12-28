@@ -1,12 +1,6 @@
 #!/usr/bin/python
 
-import time
-import hmac
-import requests
-import hashlib
-import base64
-import sys
-import json
+import base64, hashlib, hmac, json, requests, sys, time
 from . import six
 
 WT = 30
@@ -16,7 +10,7 @@ def NonceValue(NonceTimeFactor):
     Nonce = str( int( time.time() * NonceTimeFactor - 4361732500 ) )
     return Nonce
 
-class Cryptopia:
+class CryptopiaWrapper:
 
     def __init__(self, PublicKey, PrivateKey):
         self._PublicKey = PublicKey
@@ -67,7 +61,7 @@ class Cryptopia:
                             time.sleep( 1 )
             except Exception as e:
                 six.print_(e)
-                six.print_("try to reconnect in" , WT, "sec.")
+                six.print_("\n\nTry to reconnect in" , WT, "sec.")
                 time.sleep(WT)
             else:
                 response = r.text

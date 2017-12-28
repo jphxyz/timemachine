@@ -1,29 +1,20 @@
 #!/usr/bin/python
-import time
-import json
-import sys, os
-from .WrapperCryptopia import Cryptopia
+
+import json, os, sys, time
+from .WrapperCryptopia import CryptopiaWrapper
 from . import six
 
-
 cfgloc = os.path.join(sys.path[0], 'config', 'Interface.ini')
+assert os.path.isfile(cfgloc), '' \
+        + ' !!! ERROR !!!' \
+        + ' config/Interface.ini not found.'
+
 config = six.moves.configparser.ConfigParser()
 config.read(cfgloc)
-ConfDict = {}
-for section in config.sections():
-    ConfDict[section] = {}
-    for option in config.options(section):
-        ConfDict[section][option] = config.get(section, option)
-
-if (len(ConfDict) == 0):
-    six.print_(" ")
-    six.print_(" !!! ERROR !!!")
-    six.print_(" Interface.ini not found in 'config' directory!")
-    exit()
+ConfDict = config.__dict__['_sections']
 
 TimeInterval = int(ConfDict['Main_Settings']['sleep_on_error'])
 repeats = int(ConfDict['Main_Settings']['repeats_on_error'])
-
 
 class Api:
 
@@ -32,40 +23,37 @@ class Api:
         self._data = ActionData
         self.FormatedList = {}
         self.OutputFormat = OutputFormat # R = raw, F = formated
-        self.timestamp = timestr = time.strftime("%Y") + "-" + time.strftime("%m") + "-" + time.strftime("%d") + " " + time.strftime("%H") + ":" + time.strftime("%M") + ":" + time.strftime("%S")
-
-
 
     def Cryptopia(self):
-        PublicKey = str(ConfDict['Cryptopia']['public_key'])
-        PrivateKey = str(ConfDict['Cryptopia']['private_key'])
+        PublicKey   = ConfDict['Cryptopia']['public_key']
+        PrivateKey  = ConfDict['Cryptopia']['private_key']
 
         def respond(callback_req):
             repeat = 0
             while repeat <= repeats :
-                six.print_(self.timestamp, "/ Interface / Cryptopia:", str(self._action), end=' ')
-                y = Cryptopia(PublicKey, PrivateKey)
+                six.print_(time.strftime('%Y-%m-%d %H:%M:%S'), "/ Interface / Cryptopia:", self._action, end=' ', flush=True)
+                y = CryptopiaWrapper(PublicKey, PrivateKey)
                 ExchangeData = callback_req(y)
                 json_data = json.loads(ExchangeData)
                 if (isinstance(json_data, (dict)) == True):
                     try:
                         if ( str(json_data['Success']) == "True" ):
                             repeat = repeats
-                            six.print_(("/ Success:"), json_data['Success'])
+                            six.print_("/ Success:", json_data['Success'])
                             return json_data
                         else:
                             repeat = repeat + 1
-                            six.print_(("/ Success:"), json_data['Success'], (", try Task again in"), TimeInterval, ("sec."))
+                            six.print_("/ Success:", json_data['Success'], ", try Task again in", TimeInterval, "sec.")
                             six.print_(str(json_data))
                             time.sleep(TimeInterval)
                     except KeyError as e:
                         repeat = repeat + 1
-                        six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
+                        six.print_("/ Success: no, try Task again in", TimeInterval, "sec.")
                         six.print_("JSON", e, "->", str(ExchangeData), "<-")
                         time.sleep(TimeInterval)
                 else:
                     repeat = repeat + 1
-                    six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
+                    six.print_("/ Success: no, try Task again in", TimeInterval, "sec.")
                     six.print_("no JSON data provided: ->", str(ExchangeData), "<-")
                     time.sleep(TimeInterval)
 

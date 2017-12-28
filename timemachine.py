@@ -43,10 +43,10 @@ from Module.Interface import Api
 
 ### get api data
 def Wrapper(Exchange, Action, ActionData):
+    # TODO: Don't make a new API object every time!
     GetCoins = Api(Action, ActionData, 'F')
-    x = getattr(GetCoins, Exchange)
-    Data = x()
-    return Data
+    api_function = getattr(GetCoins, Exchange)
+    return api_function()
 
 # Dramatic startup messages
 zzz = 0.07
@@ -66,38 +66,37 @@ time.sleep(zzz * 7)
 six.print_('{:>76}'.format('by CoinUser'))
 six.print_(' ---------------------------------------------------------------------------')
 
+### read and validate config file
+cfgloc = os.path.join(sys.path[0], 'config', 'timemachine.ini')
+assert os.path.isfile(cfgloc), '' \
+        + ' !!! ERROR !!!' \
+        + ' config/timemachine.ini not found.'
+
+config = six.moves.configparser.ConfigParser()
+config.read(cfgloc)
+ConfDict        = config.__dict__['_sections']
+BuyCoin         = ConfDict['Main_Settings']['coin_to_buy']
+SleepInterval   = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
+DemoMode        = int(ConfDict['Demo_Mode']['active'])
+SellPercent     = float(ConfDict['Main_Settings']['sell_percent_of_available_balance']) * 0.01
+Fee             = float(ConfDict['Missing_API_Data']['tradefee'])
+BaseTradeMin    = json.loads(ConfDict['Missing_API_Data']['basemintrade'])
+Suspended       = list(json.loads(ConfDict['Missing_API_Data']['suspendedmarkets']))
+TipActive       = int(ConfDict['Submit_Tip']['active'])
+TipCoin         = ConfDict['Submit_Tip']['coin']
+TipAmount       = int(ConfDict['Submit_Tip']['tip_amount_per_user'])
+TipUsers        = int(ConfDict['Submit_Tip']['to_last_active_users'])
+TipMinAmount    = json.loads(ConfDict['Missing_API_Data']['minimumtipamounts'])
+SellCoins       = {k.upper(): float(v) for k, v in six.iteritems(ConfDict['Coins_To_SELL_and_Stop_at_Balance']) if k not in ('symbol', '__name__')}
+
+assert BuyCoin.upper() not in SellCoins, '' \
+        + ' !!! ERROR !!!' \
+        + ' The coin you want to purchase is in the list of coins to sell!\n' \
+        + ' Please edit timemachine.ini and erase %s from the list.\n' \
+        + ' Or choose a different coin to buy.'
+
 while True:
-    ### read and validate config file
-    cfgloc = os.path.join(sys.path[0], 'config', 'timemachine.ini')
-    assert os.path.isfile(cfgloc), '' \
-            + ' !!! ERROR !!!' \
-            + ' config/timemachine.ini not found'
-
-    config = six.moves.configparser.ConfigParser()
-    config.read(cfgloc)
-    ConfDict        = config.__dict__['_sections']
-    BuyCoin         = ConfDict['Main_Settings']['coin_to_buy']
-    SleepInterval   = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
-    DemoMode        = int(ConfDict['Demo_Mode']['active'])
-    SellPercent     = float(ConfDict['Main_Settings']['sell_percent_of_available_balance']) * 0.01
-    Fee             = float(ConfDict['Missing_API_Data']['tradefee'])
-    BaseTradeMin    = json.loads(ConfDict['Missing_API_Data']['basemintrade'])
-    Suspended       = list(json.loads(ConfDict['Missing_API_Data']['suspendedmarkets']))
-    TipActive       = int(ConfDict['Submit_Tip']['active'])
-    TipCoin         = ConfDict['Submit_Tip']['coin']
-    TipAmount       = int(ConfDict['Submit_Tip']['tip_amount_per_user'])
-    TipUsers        = int(ConfDict['Submit_Tip']['to_last_active_users'])
-    TipMinAmount    = json.loads(ConfDict['Missing_API_Data']['minimumtipamounts'])
-    SellCoins       = {k.upper(): float(v) for k, v in six.iteritems(ConfDict['Coins_To_SELL_and_Stop_at_Balance']) if k not in ('symbol', '__name__')}
-
-    assert BuyCoin.upper() not in SellCoins, '' \
-            + ' !!! ERROR !!!' \
-            + ' The coin you want to purchase is in the list of coins to sell!\n' \
-            + ' Please edit timemachine.ini and erase %s from the list.\n' \
-            + ' Or choose a different coin to buy.'
-
     ### Get balances and decide how much of what to sell
-
     Balances = Wrapper('Cryptopia', 'GetBalances', '')['Balances']
     BalanceList = []
     ListSell = []
@@ -454,15 +453,9 @@ while True:
             RouteNr = searchMAX(SelectionOfNumProfit)
             if ( int(RouteNr) >> 0 and float(SelectionOfNumProfit[RouteNr]) > 0.00000001):
                 MaxRouteDetails = NumRoutes[RouteNr]
-                six.print_('')
-                six.print_(' Trade Route : ', end=' ')
-                count = 0
-                for element in MaxRouteDetails:
-                    count = count + 1
-                    if (len(MaxRouteDetails) == count):
-                        six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')')
-                    else:
-                        six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')',  '  ->  ', end=' ')
+                routestr = '  ->  '.join(['%s/%s (%s)'%(e[0][0], e[0][1], e[1]) for e in MaxRouteDetails])
+                six.print_('\n Trade Route: %s'%routestr)
+
                 six.print_('{:<15}'.format(' InputAmount :'), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
                 six.print_('{:<15}'.format(' OutputAmount:'), '{:>20.8f}{:<1}{:<7}'.format(SelectionOfNumProfit[RouteNr], ' ', BuyCoin))
                 six.print_('')
