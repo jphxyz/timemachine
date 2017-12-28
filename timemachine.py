@@ -48,6 +48,16 @@ def Wrapper(Exchange, Action, ActionData):
     api_function = getattr(GetCoins, Exchange)
     return api_function()
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 # Dramatic startup messages
 zzz = 0.07
 six.print_(' ---------------------------------------------------------------------------')
@@ -110,40 +120,35 @@ while True:
         if (sellamount > 0):
             ListSell.append(commodity)
 
-    six.print_('')
-    six.print_(' ---------------')
-    six.print_('{:<8}{:<10}{:^58}'.format('  Buy :', BuyCoin,  ('!! DEMO MODE ACTIVE !!' if DemoMode == 1 else '')))
-    six.print_(' ---------------')
-    six.print_('')
-    six.print_(' Sell\t',  '{:>20}'.format('Available'), '\t', '{:>20}'.format('StopBalance'),'\t' , '{:>20}'.format('InputAmount'))
-    six.print_(' ------\t',  '{:>20}'.format('----------------'), '\t', '{:>20}'.format('----------------'),'\t' , '{:>20}'.format('----------------'))
-    SumInputs = 0.0
-    for element in BalanceList:
-        six.print_(element[0],'\t', '{:>20.8f}'.format(float(element[1])),'\t', '{:>20.8f}'.format(float(element[2])),'\t', '{:>20.8f}'.format(float(element[3])))
-        SumInputs = float(SumInputs) + float(element[3])
+    six.print_('\n ---------------')
+    demomodewarning = bcolors.WARNING + '!! DEMO MODE ACTIVE !!' + bcolors.ENDC if DemoMode == 1 else ''
+    six.print_('   Buy : {:<10}{:^58}'.format(BuyCoin,  demomodewarning))
+    six.print_(' ---------------\n')
+    rowfmt_s = '{:<5} {:>20} {:>20} {:>20}'
+    six.print_(rowfmt_s.format('Commodity', 'Balance', 'StopBalance', 'SellAmount'))
+    six.print_(rowfmt_s.format('-'*5, '-'*16, '-'*16, '-'*16))
+    rowfmt_d = '{:<5} {:>20.8f} {:>20.8f} {:>20.8f}'
+    for com, bal, stopbal, sellamt in BalanceList:
+        six.print_(rowfmt_d.format(com, bal, stopbal, sellamt))
     six.print_('')
 
-    if (len(BalanceList) >> 0 and float(SumInputs) > 0.0):
+    if not any([e[3] for e in BalanceList]):
+        six.print_('\n No Coins to sell ... ')
 
+    else:
         ### Load Market Lists
         Data = Wrapper('Cryptopia', 'GetTradePairs', [])
 
-        six.print_(' ')
-        six.print_(' searching for possible Trade Routes ... ')
+        six.print_('\n Searching for possible Trade Routes ...')
 
         MarketList = []
         for Market in Data['Data']:
-            try:
-                if Market['Symbol'] not in Suspended and Market['BaseSymbol'] not in Suspended:
-                    TotalMin = BaseTradeMin[Market['BaseSymbol']]
-                    MarketList.append([Market['Symbol'], Market['BaseSymbol'], Market['Id'], Fee, TotalMin])
-            except KeyError as e:
-                six.print_(' ')
-                six.print_(' !!! ERROR !!!')
-                six.print_(' Missing Minimum Trade Amount for', e, '!')
-                six.print_(' Please update timemachine.ini !')
-                six.print_(' Add', e, 'to BaseMinTrade in section [Missing_API_Data] !')
-                exit(1)
+            if Market['Status'] == 'OK':
+                tradepair = (Market['Symbol'], Market['BaseSymbol'])
+                idx = Market['Id']
+                fee = Market['TradeFee']
+                mintrade = Market['MinimumBaseTrade']
+                MarketList.append([tx[0], tx[1], idx, fee, mintrade])
 
         ### find Markets to get Coins direct (Trade1)
         ListTrade1 = []
@@ -394,9 +399,12 @@ while True:
             return [Output, OrderData]
 
         for SellCoin in ListSell:
+            AmountToSell = 0.0
             for element in BalanceList:
                 if (str(element[0]) == str(SellCoin)):
                     AmountToSell = element[3]
+            assert AmountToSell != 0, 'Internal error. There was a balance on %s last time we checked,\n' \
+                    + 'but now there somehow isn\'t.'
             ###check routes
             NumRoutes = {}
             NumProfit = {}
@@ -472,9 +480,6 @@ while True:
                 six.print_('{:<15}'.format(' InputAmount :'), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
                 six.print_('{:<15}'.format(' OutputAmount:'), 'Does not hit Trade Minimun, or is less than 1 satoshi.')
 
-    else:
-        six.print_('')
-        six.print_(' No Coins to sell ... ')
     six.print_('')
     six.print_(' ---------------------------------------------------------------------------')
     #submit tip (optional)
