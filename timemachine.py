@@ -81,7 +81,7 @@ while True:
         print 'timemachine.ini not found !'
         exit()
     BuyCoin = str(ConfDict['Main_Settings']['coin_to_buy'])
-    TimeInterval = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
+    SleepInterval = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
     DemoMode = int(ConfDict['Demo_Mode']['active'])
     SellBalance = float(ConfDict['Main_Settings']['sell_percent_of_available_balance']) * float(0.01)
     Fee = float(ConfDict['Missing_API_Data']['tradefee'])
@@ -534,28 +534,19 @@ while True:
         print ' ---------------------------------------------------------------------------'
 
 
-    def Pause(TimeInterval):
-        TD = 0
-        for index, point in enumerate(range(TimeInterval / 3)):
-            if (point == TD):
-                TD = TD + 20
-                if ( TimeInterval/60 - point/20 >> 1 and index == 0):
-                    print '{:>6}{:<1}{:<7}'.format(TimeInterval/60 - point/20, '', 'Minutes'),
-                elif ( TimeInterval/60 - point/20 >> 1 ):
-                    print '.'
-                    print '{:>6}{:<1}{:<7}'.format(TimeInterval/60 - point/20, '', 'Minutes'),
-                elif ( TimeInterval/60 - point/20 == 1 ):
-                    print '.'
-                    print '{:>6}{:<1}{:<7}'.format(TimeInterval/60 - point/20, '', 'Minute'),
-            else:
-                print '.',
-            time.sleep(3)
-        return '.'
+    def Pause(pause_seconds):
+        ERASE_LINE = '\x1b[2K'
+        while pause_seconds > 0:
+            m, s = divmod(pause_seconds, 60)
+            h, m = divmod(m, 60)
+            sys.stdout.write(ERASE_LINE)
+            sys.stdout.write('\rSleeping %2d:%02d:%02d'%(h,m,s))
+            sys.stdout.flush()
+            time.sleep(1)
+            pause_seconds -= 1
+        print('')
+
     print ''
-    print ' ... Sleep ...'
-    print ''
-    print Pause(TimeInterval)
-    print ''
-    print ' ... Start ...'
+    Pause(SleepInterval)
     print ''
     print ' ---------------------------------------------------------------------------'
