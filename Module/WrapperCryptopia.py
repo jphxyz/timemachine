@@ -27,7 +27,7 @@ class Cryptopia:
             try:
                 if not req:
                     req = {}
-                time.sleep(float(1) / float(NonceTimeFactor) + float(0.01))
+                time.sleep(1.0 / float(NonceTimeFactor) + 0.01)
                 public_set = set([ "GetCurrencies", "GetTradePairs", "GetMarkets", "GetMarket", "GetMarketHistory", "GetMarketOrders" ])
                 private_set = set([ "GetBalance", "GetDepositAddress", "GetOpenOrders", "GetTradeHistory", "GetTransactions", "SubmitTrade", "CancelTrade", "SubmitTip" ])
                 if method in public_set:
@@ -78,7 +78,7 @@ class Cryptopia:
     ##### Public:
     def GetCurrencies(self):
         return self.api_query("GetCurrencies")
-        
+
     def GetMarkets(self):
         return self.api_query("GetMarkets")
 

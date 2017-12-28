@@ -37,9 +37,9 @@ class Api:
 
 
     def Cryptopia(self):
-        PublicKey = str(ConfDict['Cryptopia']['public_key']) 
-        PrivateKey = str(ConfDict['Cryptopia']['private_key']) 
-                
+        PublicKey = str(ConfDict['Cryptopia']['public_key'])
+        PrivateKey = str(ConfDict['Cryptopia']['private_key'])
+
         def respond(callback_req):
             repeat = 0
             while repeat <= repeats :
@@ -62,7 +62,7 @@ class Api:
                         repeat = repeat + 1
                         six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
                         six.print_("JSON", e, "->", str(ExchangeData), "<-")
-                        time.sleep(TimeInterval)                        
+                        time.sleep(TimeInterval)
                 else:
                     repeat = repeat + 1
                     six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
@@ -127,7 +127,7 @@ class Api:
                 count = 1
                 for element in ApiString['Data']['Sell']:
                     if (count <= self._data[1]):
-                        self.FormatedList['SellOrderbook'].append([ float(element['Price']), float(element['Volume']), float(float(element['Volume']) * float(element['Price'])) ])       
+                        self.FormatedList['SellOrderbook'].append([ float(element['Price']), float(element['Volume']), float(float(element['Volume']) * float(element['Price'])) ])
                     count = count + 1
                 return self.FormatedList
         ##### public access

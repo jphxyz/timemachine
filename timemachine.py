@@ -67,80 +67,64 @@ six.print_('{:>76}'.format('by CoinUser'))
 six.print_(' ---------------------------------------------------------------------------')
 
 while True:
-    ###read conf data
+    ### read and validate config file
     cfgloc = os.path.join(sys.path[0], 'config', 'timemachine.ini')
+    assert os.path.isfile(cfgloc), '' \
+            + ' !!! ERROR !!!' \
+            + ' config/timemachine.ini not found'
+
     config = six.moves.configparser.ConfigParser()
     config.read(cfgloc)
-    ConfDict = {}
-    for section in config.sections():
-        ConfDict[section] = {}
-        for option in config.options(section):
-            ConfDict[section][option] = config.get(section, option)
-    if (len(ConfDict) == 0):
-        six.print_(' ')
-        six.print_(' !!! ERROR !!!')
-        six.print_('timemachine.ini not found !')
-        exit()
-    BuyCoin = str(ConfDict['Main_Settings']['coin_to_buy'])
-    SleepInterval = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
-    DemoMode = int(ConfDict['Demo_Mode']['active'])
-    SellBalance = float(ConfDict['Main_Settings']['sell_percent_of_available_balance']) * float(0.01)
-    Fee = float(ConfDict['Missing_API_Data']['tradefee'])
-    BaseTradeMin = json.loads(str(ConfDict['Missing_API_Data']['basemintrade']))
-    SuspendedMarkets = json.loads(str(ConfDict['Missing_API_Data']['suspendedmarkets']))
-    TipActive = int(ConfDict['Submit_Tip']['active'])
-    TipCoin = str(ConfDict['Submit_Tip']['coin'])
-    TipAmount = int(ConfDict['Submit_Tip']['tip_amount_per_user'])
-    TipUsers = int(ConfDict['Submit_Tip']['to_last_active_users'])
-    TipMinAmount = json.loads(str(ConfDict['Missing_API_Data']['minimumtipamounts']))
-    ListSellCoins = []
-    for k, v in six.iteritems(ConfDict['Coins_To_SELL_and_Stop_at_Balance']):
-        if (k != str('symbol')):
-            SYMBOL = k.upper()
-            ListSellCoins.append([str(SYMBOL), float(v)])
+    ConfDict        = config.__dict__['_sections']
+    BuyCoin         = ConfDict['Main_Settings']['coin_to_buy']
+    SleepInterval   = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
+    DemoMode        = int(ConfDict['Demo_Mode']['active'])
+    SellPercent     = float(ConfDict['Main_Settings']['sell_percent_of_available_balance']) * 0.01
+    Fee             = float(ConfDict['Missing_API_Data']['tradefee'])
+    BaseTradeMin    = json.loads(ConfDict['Missing_API_Data']['basemintrade'])
+    Suspended       = list(json.loads(ConfDict['Missing_API_Data']['suspendedmarkets']))
+    TipActive       = int(ConfDict['Submit_Tip']['active'])
+    TipCoin         = ConfDict['Submit_Tip']['coin']
+    TipAmount       = int(ConfDict['Submit_Tip']['tip_amount_per_user'])
+    TipUsers        = int(ConfDict['Submit_Tip']['to_last_active_users'])
+    TipMinAmount    = json.loads(ConfDict['Missing_API_Data']['minimumtipamounts'])
+    SellCoins       = {k.upper(): float(v) for k, v in six.iteritems(ConfDict['Coins_To_SELL_and_Stop_at_Balance']) if k not in ('symbol', '__name__')}
 
-    for element in ListSellCoins:
-        if str(BuyCoin) == element[0]:
-            six.print_(' ')
-            six.print_(' !!! ERROR !!!')
-            six.print_(' The Coin you want purchase is in the List of Coins to sell !')
-            six.print_(' Please edit timemachine.ini !')
-            six.print_(' And erase', element[0], 'form the list. Or choose a different Coin to buy .')
-            exit()
+    assert BuyCoin.upper() not in SellCoins, '' \
+            + ' !!! ERROR !!!' \
+            + ' The coin you want to purchase is in the list of coins to sell!\n' \
+            + ' Please edit timemachine.ini and erase %s from the list.\n' \
+            + ' Or choose a different coin to buy.'
 
-    ### get Balance and calculate trade Amounts
-    def Input(Balance, StopBalance):
-        AvailableReal = float(Balance[0]) - float(StopBalance)
-        SellAmount = float(Balance[0]) * float(SellBalance)
-        if (float(Balance[0]) < float(StopBalance)):
-            return 0.0
-        elif (SellAmount <= AvailableReal):
-            return SellAmount
-        elif (SellAmount > AvailableReal):
-            return AvailableReal
+    ### Get balances and decide how much of what to sell
 
     Balances = Wrapper('Cryptopia', 'GetBalances', '')['Balances']
     BalanceList = []
     ListSell = []
-    for element in ListSellCoins:
-        InputAmount = Input(Balances[element[0]], element[1])
-        BalanceList.append([element[0], Balances[element[0]], element[1], InputAmount] )
-        if (float(InputAmount) > 0.0):
-            ListSell.append(element[0])
+    for commodity, stopbalance in six.iteritems(SellCoins):
+        balance     = Balances[commodity][0]
+        available   = balance - stopbalance
+        sellfrac    = balance * SellPercent
+        sellamount  = max(0.0, min(available, sellfrac))
+
+        BalanceList.append((commodity, balance, stopbalance, sellamount))
+        if (sellamount > 0):
+            ListSell.append(commodity)
+
     six.print_('')
     six.print_(' ---------------')
-    six.print_('{:<8}{:<10}{:^58}'.format(str('  Buy :'), BuyCoin,  ('!! DEMO MODE ACTIVE !!' if DemoMode == 1 else '')))
+    six.print_('{:<8}{:<10}{:^58}'.format('  Buy :', BuyCoin,  ('!! DEMO MODE ACTIVE !!' if DemoMode == 1 else '')))
     six.print_(' ---------------')
     six.print_('')
-    six.print_(' Sell\t',  '{:>20}'.format(str('Available')), '\t', '{:>20}'.format(str('StopBalance')),'\t' , '{:>20}'.format(str('InputAmount')))
-    six.print_(' ------\t',  '{:>20}'.format(str('----------------')), '\t', '{:>20}'.format(str('----------------')),'\t' , '{:>20}'.format(str('----------------')))
+    six.print_(' Sell\t',  '{:>20}'.format('Available'), '\t', '{:>20}'.format('StopBalance'),'\t' , '{:>20}'.format('InputAmount'))
+    six.print_(' ------\t',  '{:>20}'.format('----------------'), '\t', '{:>20}'.format('----------------'),'\t' , '{:>20}'.format('----------------'))
     SumInputs = 0.0
     for element in BalanceList:
-        six.print_('', element[0],'\t', '{:>20.8f}'.format(float(element[1][0])),'\t', '{:>20.8f}'.format(float(element[2])),'\t', '{:>20.8f}'.format(float(element[3])))
+        six.print_(element[0],'\t', '{:>20.8f}'.format(float(element[1])),'\t', '{:>20.8f}'.format(float(element[2])),'\t', '{:>20.8f}'.format(float(element[3])))
         SumInputs = float(SumInputs) + float(element[3])
-    six.print_(' ')
+    six.print_('')
 
-    if (len(BalanceList) >> 0 and float(SumInputs) > float(0.0)):
+    if (len(BalanceList) >> 0 and float(SumInputs) > 0.0):
 
         ### Load Market Lists
         Data = Wrapper('Cryptopia', 'GetTradePairs', [])
@@ -151,7 +135,7 @@ while True:
         MarketList = []
         for Market in Data['Data']:
             try:
-                if Market['Symbol'] not in list(SuspendedMarkets) and  Market['BaseSymbol'] not in list(SuspendedMarkets):
+                if Market['Symbol'] not in Suspended and Market['BaseSymbol'] not in Suspended:
                     TotalMin = BaseTradeMin[Market['BaseSymbol']]
                     MarketList.append([Market['Symbol'], Market['BaseSymbol'], Market['Id'], Fee, TotalMin])
             except KeyError as e:
@@ -160,17 +144,17 @@ while True:
                 six.print_(' Missing Minimum Trade Amount for', e, '!')
                 six.print_(' Please update timemachine.ini !')
                 six.print_(' Add', e, 'to BaseMinTrade in section [Missing_API_Data] !')
-                exit()
-                
+                exit(1)
+
         ### find Markets to get Coins direct (Trade1)
         ListTrade1 = []
         for SellCoin in ListSell:
             for element in MarketList:
                 if (str(SellCoin) == str(element[0])):
-                    ListTrade1.append([element, str('Sell'), str(SellCoin)])
+                    ListTrade1.append([element, 'Sell', str(SellCoin)])
 
                 if (str(SellCoin) == str(element[1])):
-                    ListTrade1.append([element, str('Buy'), str(SellCoin)])
+                    ListTrade1.append([element, 'Buy', str(SellCoin)])
 
         ##shortest Route, single Trade
         ListSingleTrade = []
@@ -185,21 +169,21 @@ while True:
         ListLastTrade = []
         for element in MarketList:
             if str(BuyCoin) == str(element[0]):
-                ListLastTrade.append([element, str('Buy')])
+                ListLastTrade.append([element, 'Buy'])
             if str(BuyCoin) == str(element[1]):
-                ListLastTrade.append([element, str('Sell')])
-            
+                ListLastTrade.append([element, 'Sell'])
+
         ## Route on two Trades
         ListTwoTrades = []
         for LastTrade in ListLastTrade:
-            for FirstTrade in ListTrade1:    
-                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
+            for FirstTrade in ListTrade1:
+                if (str(FirstTrade[1]) == 'Buy' and str(LastTrade[0][0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
+                if (str(FirstTrade[1]) == 'Buy' and str(LastTrade[0][1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
+                if (str(FirstTrade[1]) == 'Sell' and str(LastTrade[0][0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
+                if (str(FirstTrade[1]) == 'Sell' and str(LastTrade[0][1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
         b = len(ListTwoTrades)
         six.print_('   ... found', b, 'Trade Routes across two Markets')
@@ -207,28 +191,28 @@ while True:
         ## Route on 3 Trades
         List3Trades = []
         def completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade):
-            for LastTrade in ListLastTrade:    
-                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][0]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
+            for LastTrade in ListLastTrade:
+                if (str(MiddleTradeAction) == 'Buy' and str(LastTrade[0][0]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][1]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
+                if (str(MiddleTradeAction) == 'Buy' and str(LastTrade[0][1]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][0]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
+                if (str(MiddleTradeAction) == 'Sell' and str(LastTrade[0][0]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][1]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
+                if (str(MiddleTradeAction) == 'Sell' and str(LastTrade[0][1]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                    
+
         for MiddleTrade in MarketList:
-            for FirstTrade in ListTrade1:    
-                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
+            for FirstTrade in ListTrade1:
+                if (str(FirstTrade[1]) == 'Buy' and str(MiddleTrade[0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
                     MiddleTradeAction = 'Sell'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
+                if (str(FirstTrade[1]) == 'Buy' and str(MiddleTrade[1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
                     MiddleTradeAction = 'Buy'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
+                if (str(FirstTrade[1]) == 'Sell' and str(MiddleTrade[0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
                     MiddleTradeAction = 'Sell'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
+                if (str(FirstTrade[1]) == 'Sell' and str(MiddleTrade[1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
                     MiddleTradeAction = 'Buy'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
         c = len(List3Trades)
@@ -242,13 +226,13 @@ while True:
         def RouteCheck(Route, Data, Input):
             for element in Route:
                 Price = Data['MarketSummaries'][str(element[0][2])]
-                if ( str(element[1]) == str('Buy') and float(Price[1]) > float(0.0) and float(Input) > float(0.0) ):
-                    Output = ( float(Input) * float(100) / ( float(100) + float(element[0][3]) ) ) / float(Price[1])
-                    if ( float(Input) < float(element[0][4]) + float(0.00000001) ):
+                if ( str(element[1]) == 'Buy' and float(Price[1]) > 0.0 and float(Input) > 0.0 ):
+                    Output = ( float(Input) * 100.0 / ( 100.0 + float(element[0][3]) ) ) / float(Price[1])
+                    if ( float(Input) < float(element[0][4]) + 0.00000001 ):
                         Output = 0
-                elif ( str(element[1]) == str('Sell') and float(Price[2]) > float(0.0) and float(Input) > float(0.0) ):                                                  
-                    Output = float(Input) * float(Price[2]) - float(Input) * float(Price[2]) * ( float(element[0][3]) / float(100) )
-                    if ( float(Output) < float(element[0][4]) + float(0.00000001) ):
+                elif ( str(element[1]) == 'Sell' and float(Price[2]) > 0.0 and float(Input) > 0.0 ):
+                    Output = float(Input) * float(Price[2]) - float(Input) * float(Price[2]) * ( float(element[0][3]) / 100.0 )
+                    if ( float(Output) < float(element[0][4]) + 0.00000001 ):
                         Output = 0
                 else:
                     Output = 0
@@ -306,15 +290,15 @@ while True:
         def RouteCalc(Route, Data, Input):
             OrderData = []
             for element in Route:
-                if ( str(element[1]) == str('Buy') and float(Input) > float(0.0) ):
+                if ( str(element[1]) == 'Buy' and float(Input) > 0.0 ):
                     time.sleep(1)
                     InputNet = Input
-                    Input = float(Input) * float(100) / ( float(100) + float(element[0][3]) )
+                    Input = float(Input) * 100.0 / ( 100.0 + float(element[0][3]) )
                     OrderbookData = OrderDepthAsk(Data[element[0][2]]['SellOrderbook'], Input)
                     AskPrice = OrderbookData[0]
                     OrderPrice = OrderbookData[2]
                     Output = float(OrderbookData[1]) / float(OrderbookData[0])
-                    if ( float(InputNet) < float(element[0][4]) + float(0.00000001) ):
+                    if ( float(InputNet) < float(element[0][4]) + 0.00000001 ):
                         Output = 0
                     Orders = [[OrderPrice, Output, 0]]
                     if (float(AskPrice) != float(OrderPrice)):
@@ -332,7 +316,7 @@ while True:
                                     TotalFake = float(sum(Amounts)) * float(Position[0])
                                     if ( float(TotalFake) > float(TotalLeft) and float(Position[0]) <= float(OrderPrice)):
                                         Jumper = 1
-                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) >= float(element[0][4]) + float(0.00000001) or index == 0 ):
+                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) >= float(element[0][4]) + 0.00000001 or index == 0 ):
                                             Price = float(Data[element[0][2]]['SellOrderbook'][index-1][0])
                                             Output = float(sum(Amounts)) - float(Position[1])
                                             TotalLeft = float(TotalLeft) - float(sum(Totals)) + float(Position[2])
@@ -340,14 +324,14 @@ while True:
                                             Amounts = [float(Position[1])]
                                             Totals = [float(Position[2])]
                                             Jumper = 0
-                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) < float(element[0][4]) + float(0.00000001) and index != 0 and Jumper == 1):
+                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) < float(element[0][4]) + 0.00000001 and index != 0 and Jumper == 1):
                                             Price = float(Position[0])
                                             TotalP1 = float(sum(Totals)) - float(Position[2])
                                             AmountP1 = float(sum(Amounts)) - float(Position[1])
-                                            TotalP2 = float(element[0][4]) + float(0.00000001) - float(TotalP1)
+                                            TotalP2 = float(element[0][4]) + 0.00000001 - float(TotalP1)
                                             AmountP2 = float(TotalP2) / float(Price)
                                             if ((float(AmountP1) + float(AmountP1)) * float(Price) < float(TotalLeft)):
-                                                if ((float(AmountP1) + float(AmountP1)) * float(Price) < 2 * float(element[0][4]) + float(0.00000001)):
+                                                if ((float(AmountP1) + float(AmountP1)) * float(Price) < 2 * float(element[0][4]) + 0.00000001):
                                                     Output = float(AmountP1) + float(AmountP2)
                                                     Orders.append([Price, Output, '11a'])
                                                     TotalLeft = float(TotalLeft) - float(TotalP2)
@@ -361,7 +345,7 @@ while True:
                                                     TotalP3 = float(AmountP3) / float(Position[0])
                                                     Totals = [float(Position[2]) - float(TotalP3)]
 
-                                    if ( float(Position[0]) == float(OrderPrice) and float(TotalLeft) >= float(element[0][4]) + float(0.00000001)):
+                                    if ( float(Position[0]) == float(OrderPrice) and float(TotalLeft) >= float(element[0][4]) + 0.00000001):
                                         Output = 0
                                         for Order in Orders:
                                             Output = float(Output) + float(Order[1])
@@ -374,14 +358,14 @@ while True:
                     Output = 0
                     for Order in Orders:
                         Output = float(Output) + float(Order[1])
-                    if (round(float(Output),8) * float(AskPrice) + float(Output) * float(AskPrice) * ( float(element[0][3]) / float(100) )  > float(InputNet)):
+                    if (round(float(Output),8) * float(AskPrice) + float(Output) * float(AskPrice) * ( float(element[0][3]) / 100.0 )  > float(InputNet)):
                         Output = 0
                         count = 1
                         for Order in Orders:
                             if (count == len(Orders)):
                                 Output = float(Output) + float(Order[1])
-                                TotalDif = round(float(Output),8) * float(AskPrice) + float(Output) * float(AskPrice) * ( float(element[0][3]) / float(100) )  - float(InputNet)
-                                OrderCorr = round((float(TotalDif) * float(100) / ( float(100) + float(element[0][3]) )) / float(AskPrice) + 0.000000005, 8)
+                                TotalDif = round(float(Output),8) * float(AskPrice) + float(Output) * float(AskPrice) * ( float(element[0][3]) / 100.0 )  - float(InputNet)
+                                OrderCorr = round((float(TotalDif) * 100.0 / ( 100.0 + float(element[0][3]) )) / float(AskPrice) + 0.000000005, 8)
                                 Output = round(float(Output) - float(OrderCorr),8)
                                 OrderData.append([element[0][2], element[1], Order[0], float(Order[1]) - float(OrderCorr), Order[2]])
                             else:
@@ -392,22 +376,22 @@ while True:
                         Output = 0
                         for Order in Orders:
                             Output = float(Output) + float(Order[1])
-                            OrderData.append([element[0][2], element[1], Order[0], Order[1], Order[2]])                        
+                            OrderData.append([element[0][2], element[1], Order[0], Order[1], Order[2]])
 
-                elif ( str(element[1]) == str('Sell') and float(Input) > float(0.0) ):
+                elif ( str(element[1]) == 'Sell' and float(Input) > 0.0 ):
                         OrderbookData = OrderDepthBid(Data[element[0][2]]['BuyOrderbook'], Input)
                         BidPrice = OrderbookData[0]
                         OrderPrice = OrderbookData[2]
                         Input = OrderbookData[1]
-                        Output = float(Input) * float(OrderbookData[0]) - float(Input) * float(OrderbookData[0]) * ( float(element[0][3]) / float(100) )
-                        if ( float(Output) < float(element[0][4]) + float(0.00000001) ):
+                        Output = float(Input) * float(OrderbookData[0]) - float(Input) * float(OrderbookData[0]) * ( float(element[0][3]) / 100.0 )
+                        if ( float(Output) < float(element[0][4]) + 0.00000001 ):
                             Output = 0
                         OrderData.append([element[0][2], element[1], OrderPrice, Input])
 
                 else:
                     Output = 0
                     OrderData.append([element[0][2], element[1], 0.0, 0.0])
-                
+
                 Input = Output
             return [Output, OrderData]
 
@@ -435,7 +419,7 @@ while True:
                     NumRoutes.update({count:Route})
                     NumProfit.update({count:RouteCheck(Route, Data, AmountToSell)})
                     count = count + 1
-                   
+
             for Route in ListSingleTrade:
                 if (str(Route[0][2]) == str(SellCoin)):
                     NumRoutes.update({count:Route})
@@ -448,10 +432,10 @@ while True:
             TradeDetails = {}
             Repeat = 1
             while 1 == Repeat:
-                
+
                 MaxProfit = searchMAX(NumProfit)
                 MaxProfitSelection = searchMAX(SelectionOfNumProfit)
-                if (float(NumProfit[MaxProfit]) < float(SelectionOfNumProfit[MaxProfitSelection]) or float(MaxProfit) == float(0.0) ):
+                if (float(NumProfit[MaxProfit]) < float(SelectionOfNumProfit[MaxProfitSelection]) or float(MaxProfit) == 0.0 ):
                     Repeat = 0
                 else:
 
@@ -465,10 +449,10 @@ while True:
                     SelectionOfNumProfit.update({MaxProfit:New[0]})
                     TradeDetails.update({MaxProfit:New[1]})
                     NumProfit.update({MaxProfit:0})
-                
+
 
             RouteNr = searchMAX(SelectionOfNumProfit)
-            if ( int(RouteNr) >> int(0) and float(SelectionOfNumProfit[RouteNr]) > float(0.00000001)):
+            if ( int(RouteNr) >> 0 and float(SelectionOfNumProfit[RouteNr]) > 0.00000001):
                 MaxRouteDetails = NumRoutes[RouteNr]
                 six.print_('')
                 six.print_(' Trade Route : ', end=' ')
@@ -479,8 +463,8 @@ while True:
                         six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')')
                     else:
                         six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')',  '  ->  ', end=' ')
-                six.print_('{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
-                six.print_('{:<15}'.format(str(' OutputAmount:')), '{:>20.8f}{:<1}{:<7}'.format(SelectionOfNumProfit[RouteNr], ' ', BuyCoin))
+                six.print_('{:<15}'.format(' InputAmount :'), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
+                six.print_('{:<15}'.format(' OutputAmount:'), '{:>20.8f}{:<1}{:<7}'.format(SelectionOfNumProfit[RouteNr], ' ', BuyCoin))
                 six.print_('')
                 MaxRouteTrades = TradeDetails[RouteNr]
                 six.print_(' Submit Trade(s):')
@@ -493,9 +477,8 @@ while True:
                         Wrapper('Cryptopia', 'SubmitOrder', [element[0], element[1], element[2], element[3]])
             else:
                 six.print_('')
-                six.print_('{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
-                six.print_('{:<15}'.format(str(' OutputAmount:')), 'Does not hit Trade Minimun, or is less than 1 satoshi.')
-                
+                six.print_('{:<15}'.format(' InputAmount :'), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
+                six.print_('{:<15}'.format(' OutputAmount:'), 'Does not hit Trade Minimun, or is less than 1 satoshi.')
 
     else:
         six.print_('')
@@ -514,7 +497,7 @@ while True:
                 six.print_(' You\'ve set', float(TipAmount), str(TipCoin), 'per User .')
                 six.print_(' Minimum is', minTip, str(TipCoin), '.')
             else:
-                if ( int(TipUsers) >= int(2) and int(TipUsers) <= int(100)):
+                if ( int(TipUsers) >= 2 and int(TipUsers) <= 100):
                     six.print_('')
                     six.print_('', float(TipAmount) * float(TipUsers), str(TipCoin), 'divided equally amongst the last', TipUsers, 'active users.')
                     six.print_('')
