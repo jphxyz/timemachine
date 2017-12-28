@@ -2,12 +2,12 @@
 
 import time
 import hmac
-import urllib
 import requests
 import hashlib
 import base64
 import sys
 import json
+from . import six
 
 WT = 30
 
@@ -46,7 +46,7 @@ class Cryptopia:
                         m = hashlib.md5()
                         m.update(post_data)
                         requestContentBase64String = base64.b64encode(m.digest())
-                        signature = self._PublicKey + "POST" + urllib.quote_plus( url ).lower() + nonce + requestContentBase64String
+                        signature = self._PublicKey + "POST" + six.moves.urllib.parse.quote_plus( url ).lower() + nonce + requestContentBase64String
                         hmacsignature = base64.b64encode(hmac.new(base64.b64decode( self._PrivateKey ), signature, hashlib.sha256).digest())
                         header_value = "amx " + self._PublicKey + ":" + hmacsignature + ":" + nonce
                         headers = { 'Authorization': header_value, 'Content-Type':'application/json; charset=utf-8' }
@@ -65,7 +65,7 @@ class Cryptopia:
                             repeat = repeat - 1
                             print r
                             time.sleep( 1 )
-            except Exception, e:
+            except Exception as e:
                 print e
                 print "try to reconnect in" , WT, "sec."
                 time.sleep(WT)

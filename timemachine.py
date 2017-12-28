@@ -37,7 +37,8 @@ I'm including here. It's also possible they wanted it to be in the public domain
 but BSD seems more appropriate and not much more restrictive anyway.
 '''
 
-import ConfigParser, json, os, sys, time
+import json, os, sys, time
+from Module import six
 from Module.Interface import Api
 
 ### get api data
@@ -68,7 +69,7 @@ print ' ------------------------------------------------------------------------
 while True:
     ###read conf data
     cfgloc = os.path.join(sys.path[0], 'config', 'timemachine.ini')
-    config = ConfigParser.ConfigParser()
+    config = six.moves.configparser.ConfigParser()
     config.read(cfgloc)
     ConfDict = {}
     for section in config.sections():
@@ -93,8 +94,8 @@ while True:
     TipUsers = int(ConfDict['Submit_Tip']['to_last_active_users'])
     TipMinAmount = json.loads(str(ConfDict['Missing_API_Data']['minimumtipamounts']))
     ListSellCoins = []
-    for k, v in ConfDict['Coins_To_SELL_and_Stop_at_Balance'].iteritems():
-        if (k <> str('symbol')):
+    for k, v in six.iteritems(ConfDict['Coins_To_SELL_and_Stop_at_Balance']):
+        if (k != str('symbol')):
             SYMBOL = k.upper()
             ListSellCoins.append([str(SYMBOL), float(v)])
 
@@ -153,7 +154,7 @@ while True:
                 if Market['Symbol'] not in list(SuspendedMarkets) and  Market['BaseSymbol'] not in list(SuspendedMarkets):
                     TotalMin = BaseTradeMin[Market['BaseSymbol']]
                     MarketList.append([Market['Symbol'], Market['BaseSymbol'], Market['Id'], Fee, TotalMin])
-            except KeyError, e:
+            except KeyError as e:
                 print ' '
                 print ' !!! ERROR !!!'
                 print ' Missing Minimum Trade Amount for', e, '!'
@@ -192,13 +193,13 @@ while True:
         ListTwoTrades = []
         for LastTrade in ListLastTrade:
             for FirstTrade in ListTrade1:    
-                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][0]) == str(FirstTrade[0][0]) and str(BuyCoin) <> str(FirstTrade[0][0])):
+                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][1]) == str(FirstTrade[0][0]) and str(BuyCoin) <> str(FirstTrade[0][0])):
+                if (str(FirstTrade[1]) == str('Buy') and str(LastTrade[0][1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(FirstTrade[0][0])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][0]) == str(FirstTrade[0][1]) and str(BuyCoin) <> str(FirstTrade[0][1])):
+                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
-                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][1]) == str(FirstTrade[0][1]) and str(BuyCoin) <> str(FirstTrade[0][1])):
+                if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
         b = len(ListTwoTrades)
         print '   ... found', b, 'Trade Routes across two Markets'
@@ -207,27 +208,27 @@ while True:
         List3Trades = []
         def completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade):
             for LastTrade in ListLastTrade:    
-                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][0]) == str(MiddleTrade[0]) and str(BuyCoin) <> str(MiddleTrade[0]) and LastTrade[0][2] <> MiddleTrade[2]):
+                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][0]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][1]) == str(MiddleTrade[0]) and str(BuyCoin) <> str(MiddleTrade[0]) and LastTrade[0][2] <> MiddleTrade[2]):
+                if (str(MiddleTradeAction) == str('Buy') and str(LastTrade[0][1]) == str(MiddleTrade[0]) and str(BuyCoin) != str(MiddleTrade[0]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][0]) == str(MiddleTrade[1]) and str(BuyCoin) <> str(MiddleTrade[1]) and LastTrade[0][2] <> MiddleTrade[2]):
+                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][0]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
-                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][1]) == str(MiddleTrade[1]) and str(BuyCoin) <> str(MiddleTrade[1]) and LastTrade[0][2] <> MiddleTrade[2]):
+                if (str(MiddleTradeAction) == str('Sell') and str(LastTrade[0][1]) == str(MiddleTrade[1]) and str(BuyCoin) != str(MiddleTrade[1]) and LastTrade[0][2] != MiddleTrade[2]):
                     List3Trades.append([FirstTrade, [MiddleTrade, MiddleTradeAction], LastTrade])
                     
         for MiddleTrade in MarketList:
             for FirstTrade in ListTrade1:    
-                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[0]) == str(FirstTrade[0][0]) and str(BuyCoin) <> str(MiddleTrade[1]) and FirstTrade[0][2] <> MiddleTrade[2]): #and str(BuyCoin) <> str(FirstTrade[0][0])
+                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[0]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
                     MiddleTradeAction = 'Sell'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[1]) == str(FirstTrade[0][0]) and str(BuyCoin) <> str(MiddleTrade[0]) and FirstTrade[0][2] <> MiddleTrade[2]): #and str(BuyCoin) <> str(FirstTrade[0][0])
+                if (str(FirstTrade[1]) == str('Buy') and str(MiddleTrade[1]) == str(FirstTrade[0][0]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][0])
                     MiddleTradeAction = 'Buy'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[0]) == str(FirstTrade[0][1]) and str(BuyCoin) <> str(MiddleTrade[1]) and FirstTrade[0][2] <> MiddleTrade[2]): #and str(BuyCoin) <> str(FirstTrade[0][1])
+                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[0]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[1]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
                     MiddleTradeAction = 'Sell'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
-                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[1]) == str(FirstTrade[0][1]) and str(BuyCoin) <> str(MiddleTrade[0]) and FirstTrade[0][2] <> MiddleTrade[2]): #and str(BuyCoin) <> str(FirstTrade[0][1])
+                if (str(FirstTrade[1]) == str('Sell') and str(MiddleTrade[1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(MiddleTrade[0]) and FirstTrade[0][2] != MiddleTrade[2]): #and str(BuyCoin) != str(FirstTrade[0][1])
                     MiddleTradeAction = 'Buy'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
         c = len(List3Trades)
@@ -316,9 +317,9 @@ while True:
                     if ( float(InputNet) < float(element[0][4]) + float(0.00000001) ):
                         Output = 0
                     Orders = [[OrderPrice, Output, 0]]
-                    if (float(AskPrice) <> float(OrderPrice)):
+                    if (float(AskPrice) != float(OrderPrice)):
                         TotalFake = float(Output) * float(OrderbookData[2])
-                        for Symbol, Balance in Balances.iteritems():
+                        for Symbol, Balance in six.iteritems(Balances):
                             if ( str(Symbol) == str(element[0][1]) and float(TotalFake) > float(Balance[0])):
                                 Amount = float(Output)
                                 TotalLeft = float(Input)
@@ -339,7 +340,7 @@ while True:
                                             Amounts = [float(Position[1])]
                                             Totals = [float(Position[2])]
                                             Jumper = 0
-                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) < float(element[0][4]) + float(0.00000001) and index <> 0 and Jumper == 1):
+                                        if ( (float(sum(Amounts)) - float(Position[1])) * float(Data[element[0][2]]['SellOrderbook'][index-1][0]) < float(element[0][4]) + float(0.00000001) and index != 0 and Jumper == 1):
                                             Price = float(Position[0])
                                             TotalP1 = float(sum(Totals)) - float(Position[2])
                                             AmountP1 = float(sum(Amounts)) - float(Position[1])
@@ -487,7 +488,7 @@ while True:
                     for element in MaxRouteTrades:
                         print '{:<4}'.format(element[1]), 'MarketId:', element[0], '\t', 'Price:', '{:>.8f}'.format(float(element[2])), '\t', 'Amount:', '{:>.8f}'.format(float(element[3]))
                     print '   !! DEMO MODE ACTIVE !!   '
-                elif (DemoMode <> 1):
+                elif (DemoMode != 1):
                     for element in MaxRouteTrades:
                         Wrapper('Cryptopia', 'SubmitOrder', [element[0], element[1], element[2], element[3]])
             else:
@@ -519,7 +520,7 @@ while True:
                     print ''
                     if (DemoMode == 1):
                         print '   !! DEMO MODE ACTIVE !!   '
-                    elif (DemoMode <> 1):
+                    elif (DemoMode != 1):
                         Wrapper('Cryptopia', 'SubmitTip', [str(TipCoin), int(TipUsers), float(TipAmount) * float(TipUsers)])
                 else:
                     print ''

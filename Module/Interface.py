@@ -2,12 +2,12 @@
 import time
 import json
 import sys, os
-import ConfigParser
-from WrapperCryptopia import Cryptopia
+from .WrapperCryptopia import Cryptopia
+from . import six
 
 
 cfgloc = os.path.join(sys.path[0], 'config', 'Interface.ini')
-config = ConfigParser.ConfigParser()
+config = six.moves.configparser.ConfigParser()
 config.read(cfgloc)
 ConfDict = {}
 for section in config.sections():
@@ -59,7 +59,7 @@ class Api:
                             print ("/ Success:"), json_data['Success'], (", try Task again in"), TimeInterval, ("sec.")
                             print str(json_data)
                             time.sleep(TimeInterval)
-                    except KeyError, e:
+                    except KeyError as e:
                         repeat = repeat + 1
                         print ("/ Success: no, try Task again in"), TimeInterval, ("sec.")
                         print "JSON", e, "->", str(ExchangeData), "<-"
