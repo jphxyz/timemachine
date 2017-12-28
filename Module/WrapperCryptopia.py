@@ -42,32 +42,32 @@ class Cryptopia:
                     while repeat >= 1:
                         url = "https://www.cryptopia.co.nz/Api/" + method
                         nonce = NonceValue(NonceTimeFactor)
-                        post_data = json.dumps( req );
+                        post_data = six.b(json.dumps(req))
                         m = hashlib.md5()
                         m.update(post_data)
                         requestContentBase64String = base64.b64encode(m.digest())
-                        signature = self._PublicKey + "POST" + six.moves.urllib.parse.quote_plus( url ).lower() + nonce + requestContentBase64String
-                        hmacsignature = base64.b64encode(hmac.new(base64.b64decode( self._PrivateKey ), signature, hashlib.sha256).digest())
-                        header_value = "amx " + self._PublicKey + ":" + hmacsignature + ":" + nonce
+                        signature = six.b(self._PublicKey + "POST" + six.moves.urllib.parse.quote_plus( url ).lower() + nonce) + requestContentBase64String
+                        hmacsignature = base64.b64encode(hmac.new(base64.b64decode(self._PrivateKey), signature, hashlib.sha256).digest())
+                        header_value = "amx " + self._PublicKey + ":" + hmacsignature.decode('utf-8') +  ":" + nonce
                         headers = { 'Authorization': header_value, 'Content-Type':'application/json; charset=utf-8' }
                         r = requests.post( url, data = post_data, headers = headers )
                         if (str(r) == str('<Response [200]>')):
                             repeat = 0
                         elif (str(r) == str('<Response [503]>')):
                             repeat = 2
-                            print r, "The server is currently unavailable."
+                            six.print_(r, "The server is currently unavailable.")
                             time.sleep( 60 )
                         elif (str(r) == str('<Response [429]>')):
                             repeat = 0
-                            print r, "Too many requests in a given amount of time."
+                            six.print_(r, "Too many requests in a given amount of time.")
                             time.sleep( 5 )
                         else:
                             repeat = repeat - 1
-                            print r
+                            six.print_(r)
                             time.sleep( 1 )
             except Exception as e:
-                print e
-                print "try to reconnect in" , WT, "sec."
+                six.print_(e)
+                six.print_("try to reconnect in" , WT, "sec.")
                 time.sleep(WT)
             else:
                 response = r.text

@@ -50,21 +50,21 @@ def Wrapper(Exchange, Action, ActionData):
 
 # Dramatic startup messages
 zzz = 0.07
-print ' ---------------------------------------------------------------------------'
-print ''
+six.print_(' ---------------------------------------------------------------------------')
+six.print_('')
 sys.stdout.write('{:<26}'.format(''))
 for letter in 'TIMEMACHINE':
     sys.stdout.write(' ' + letter)
     time.sleep(zzz)
     sys.stdout.flush()
-print '\n'
+six.print_('\n')
 time.sleep(zzz)
-print '{:^76}'.format('advanced auto-sell program')
+six.print_('{:^76}'.format('advanced auto-sell program'))
 time.sleep(zzz)
-print '{:^76}'.format('for CRYPTOPIA')
+six.print_('{:^76}'.format('for CRYPTOPIA'))
 time.sleep(zzz * 7)
-print '{:>76}'.format('by CoinUser')
-print ' ---------------------------------------------------------------------------'
+six.print_('{:>76}'.format('by CoinUser'))
+six.print_(' ---------------------------------------------------------------------------')
 
 while True:
     ###read conf data
@@ -77,9 +77,9 @@ while True:
         for option in config.options(section):
             ConfDict[section][option] = config.get(section, option)
     if (len(ConfDict) == 0):
-        print ' '
-        print ' !!! ERROR !!!'
-        print 'timemachine.ini not found !'
+        six.print_(' ')
+        six.print_(' !!! ERROR !!!')
+        six.print_('timemachine.ini not found !')
         exit()
     BuyCoin = str(ConfDict['Main_Settings']['coin_to_buy'])
     SleepInterval = int(ConfDict['Main_Settings']['sleep_minutes']) * 60
@@ -101,11 +101,11 @@ while True:
 
     for element in ListSellCoins:
         if str(BuyCoin) == element[0]:
-            print ' '
-            print ' !!! ERROR !!!'
-            print ' The Coin you want purchase is in the List of Coins to sell !'
-            print ' Please edit timemachine.ini !'
-            print ' And erase', element[0], 'form the list. Or choose a different Coin to buy .'
+            six.print_(' ')
+            six.print_(' !!! ERROR !!!')
+            six.print_(' The Coin you want purchase is in the List of Coins to sell !')
+            six.print_(' Please edit timemachine.ini !')
+            six.print_(' And erase', element[0], 'form the list. Or choose a different Coin to buy .')
             exit()
 
     ### get Balance and calculate trade Amounts
@@ -127,26 +127,26 @@ while True:
         BalanceList.append([element[0], Balances[element[0]], element[1], InputAmount] )
         if (float(InputAmount) > 0.0):
             ListSell.append(element[0])
-    print ''
-    print ' ---------------'
-    print '{:<8}{:<10}{:^58}'.format(str('  Buy :'), BuyCoin,  ('!! DEMO MODE ACTIVE !!' if DemoMode == 1 else ''))
-    print ' ---------------'
-    print ''
-    print ' Sell\t',  '{:>20}'.format(str('Available')), '\t', '{:>20}'.format(str('StopBalance')),'\t' , '{:>20}'.format(str('InputAmount'))
-    print ' ------\t',  '{:>20}'.format(str('----------------')), '\t', '{:>20}'.format(str('----------------')),'\t' , '{:>20}'.format(str('----------------'))
+    six.print_('')
+    six.print_(' ---------------')
+    six.print_('{:<8}{:<10}{:^58}'.format(str('  Buy :'), BuyCoin,  ('!! DEMO MODE ACTIVE !!' if DemoMode == 1 else '')))
+    six.print_(' ---------------')
+    six.print_('')
+    six.print_(' Sell\t',  '{:>20}'.format(str('Available')), '\t', '{:>20}'.format(str('StopBalance')),'\t' , '{:>20}'.format(str('InputAmount')))
+    six.print_(' ------\t',  '{:>20}'.format(str('----------------')), '\t', '{:>20}'.format(str('----------------')),'\t' , '{:>20}'.format(str('----------------')))
     SumInputs = 0.0
     for element in BalanceList:
-        print '', element[0],'\t', '{:>20.8f}'.format(float(element[1][0])),'\t', '{:>20.8f}'.format(float(element[2])),'\t', '{:>20.8f}'.format(float(element[3]))
+        six.print_('', element[0],'\t', '{:>20.8f}'.format(float(element[1][0])),'\t', '{:>20.8f}'.format(float(element[2])),'\t', '{:>20.8f}'.format(float(element[3])))
         SumInputs = float(SumInputs) + float(element[3])
-    print ' '
+    six.print_(' ')
 
     if (len(BalanceList) >> 0 and float(SumInputs) > float(0.0)):
 
         ### Load Market Lists
         Data = Wrapper('Cryptopia', 'GetTradePairs', [])
 
-        print ' '
-        print ' searching for possible Trade Routes ... '
+        six.print_(' ')
+        six.print_(' searching for possible Trade Routes ... ')
 
         MarketList = []
         for Market in Data['Data']:
@@ -155,11 +155,11 @@ while True:
                     TotalMin = BaseTradeMin[Market['BaseSymbol']]
                     MarketList.append([Market['Symbol'], Market['BaseSymbol'], Market['Id'], Fee, TotalMin])
             except KeyError as e:
-                print ' '
-                print ' !!! ERROR !!!'
-                print ' Missing Minimum Trade Amount for', e, '!'
-                print ' Please update timemachine.ini !'
-                print ' Add', e, 'to BaseMinTrade in section [Missing_API_Data] !'
+                six.print_(' ')
+                six.print_(' !!! ERROR !!!')
+                six.print_(' Missing Minimum Trade Amount for', e, '!')
+                six.print_(' Please update timemachine.ini !')
+                six.print_(' Add', e, 'to BaseMinTrade in section [Missing_API_Data] !')
                 exit()
                 
         ### find Markets to get Coins direct (Trade1)
@@ -179,7 +179,7 @@ while True:
                 ListSingleTrade.append([element])
 
         a = len(ListSingleTrade)
-        print '   ... found', a, 'direct Trade(s)'
+        six.print_('   ... found', a, 'direct Trade(s)')
 
         ### find Markets to get coins on last trade (Trade2 and Trade3)
         ListLastTrade = []
@@ -202,7 +202,7 @@ while True:
                 if (str(FirstTrade[1]) == str('Sell') and str(LastTrade[0][1]) == str(FirstTrade[0][1]) and str(BuyCoin) != str(FirstTrade[0][1])):
                     ListTwoTrades.append([FirstTrade, LastTrade])
         b = len(ListTwoTrades)
-        print '   ... found', b, 'Trade Routes across two Markets'
+        six.print_('   ... found', b, 'Trade Routes across two Markets')
 
         ## Route on 3 Trades
         List3Trades = []
@@ -232,7 +232,7 @@ while True:
                     MiddleTradeAction = 'Buy'
                     completeList3Trades(MiddleTradeAction, MiddleTrade, FirstTrade)
         c = len(List3Trades)
-        print '   ... found', c, 'Trade Routes across three Markets'
+        six.print_('   ... found', c, 'Trade Routes across three Markets')
 
         ### get Markets Data and Routes
         def searchMAX(Dict):
@@ -419,10 +419,10 @@ while True:
             NumRoutes = {}
             NumProfit = {}
             count = 0
-            print ''
-            print ' ---------------------------------------------------------------------------'
-            print ''
-            print ' calculating Routes for', SellCoin, '->', BuyCoin
+            six.print_('')
+            six.print_(' ---------------------------------------------------------------------------')
+            six.print_('')
+            six.print_(' calculating Routes for', SellCoin, '->', BuyCoin)
             Data = Wrapper('Cryptopia', 'GetMarketSummaries', [])
             for Route in List3Trades:
                 if (str(Route[0][2]) == str(SellCoin)):
@@ -470,69 +470,69 @@ while True:
             RouteNr = searchMAX(SelectionOfNumProfit)
             if ( int(RouteNr) >> int(0) and float(SelectionOfNumProfit[RouteNr]) > float(0.00000001)):
                 MaxRouteDetails = NumRoutes[RouteNr]
-                print ''
-                print ' Trade Route : ',
+                six.print_('')
+                six.print_(' Trade Route : ', end=' ')
                 count = 0
                 for element in MaxRouteDetails:
                     count = count + 1
                     if (len(MaxRouteDetails) == count):
-                        print str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')'
+                        six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')')
                     else:
-                        print str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')',  '  ->  ',
-                print '{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin)
-                print '{:<15}'.format(str(' OutputAmount:')), '{:>20.8f}{:<1}{:<7}'.format(SelectionOfNumProfit[RouteNr], ' ', BuyCoin)
-                print ''
+                        six.print_(str(element[0][0]) + '/' + str(element[0][1]), '(' + str(element[1]) + ')',  '  ->  ', end=' ')
+                six.print_('{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
+                six.print_('{:<15}'.format(str(' OutputAmount:')), '{:>20.8f}{:<1}{:<7}'.format(SelectionOfNumProfit[RouteNr], ' ', BuyCoin))
+                six.print_('')
                 MaxRouteTrades = TradeDetails[RouteNr]
-                print ' Submit Trade(s):'
+                six.print_(' Submit Trade(s):')
                 if (DemoMode == 1):
                     for element in MaxRouteTrades:
-                        print '{:<4}'.format(element[1]), 'MarketId:', element[0], '\t', 'Price:', '{:>.8f}'.format(float(element[2])), '\t', 'Amount:', '{:>.8f}'.format(float(element[3]))
-                    print '   !! DEMO MODE ACTIVE !!   '
+                        six.print_('{:<4}'.format(element[1]), 'MarketId:', element[0], '\t', 'Price:', '{:>.8f}'.format(float(element[2])), '\t', 'Amount:', '{:>.8f}'.format(float(element[3])))
+                    six.print_('   !! DEMO MODE ACTIVE !!   ')
                 elif (DemoMode != 1):
                     for element in MaxRouteTrades:
                         Wrapper('Cryptopia', 'SubmitOrder', [element[0], element[1], element[2], element[3]])
             else:
-                print ''
-                print '{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin)
-                print '{:<15}'.format(str(' OutputAmount:')), 'Does not hit Trade Minimun, or is less than 1 satoshi.'
+                six.print_('')
+                six.print_('{:<15}'.format(str(' InputAmount :')), '{:>20.8f}{:<1}{:<7}'.format(AmountToSell, ' ', SellCoin))
+                six.print_('{:<15}'.format(str(' OutputAmount:')), 'Does not hit Trade Minimun, or is less than 1 satoshi.')
                 
 
     else:
-        print ''
-        print ' No Coins to sell ... '
-    print ''
-    print ' ---------------------------------------------------------------------------'
+        six.print_('')
+        six.print_(' No Coins to sell ... ')
+    six.print_('')
+    six.print_(' ---------------------------------------------------------------------------')
     #submit tip (optional)
     if (TipActive == 1):
-        print ''
-        print ' Submit Tip :'
+        six.print_('')
+        six.print_(' Submit Tip :')
         if ( str(TipCoin) in dict(TipMinAmount) ):
             minTip = TipMinAmount[TipCoin]
             if ( float(minTip) * float(TipUsers) > float(TipAmount) * float(TipUsers) ):
-                print ''
-                print ' Tip not submitted. Amount per user to small, please edit timemachine.ini .'
-                print ' You\'ve set', float(TipAmount), str(TipCoin), 'per User .'
-                print ' Minimum is', minTip, str(TipCoin), '.'
+                six.print_('')
+                six.print_(' Tip not submitted. Amount per user to small, please edit timemachine.ini .')
+                six.print_(' You\'ve set', float(TipAmount), str(TipCoin), 'per User .')
+                six.print_(' Minimum is', minTip, str(TipCoin), '.')
             else:
                 if ( int(TipUsers) >= int(2) and int(TipUsers) <= int(100)):
-                    print ''
-                    print '', float(TipAmount) * float(TipUsers), str(TipCoin), 'divided equally amongst the last', TipUsers, 'active users.'
-                    print ''
+                    six.print_('')
+                    six.print_('', float(TipAmount) * float(TipUsers), str(TipCoin), 'divided equally amongst the last', TipUsers, 'active users.')
+                    six.print_('')
                     if (DemoMode == 1):
-                        print '   !! DEMO MODE ACTIVE !!   '
+                        six.print_('   !! DEMO MODE ACTIVE !!   ')
                     elif (DemoMode != 1):
                         Wrapper('Cryptopia', 'SubmitTip', [str(TipCoin), int(TipUsers), float(TipAmount) * float(TipUsers)])
                 else:
-                    print ''
-                    print ' Tip not submitted, please edit timemachine.ini .'
-                    print ' You try to Tip', TipUsers, 'Users. '
-                    print ' Do not Tip less than 2 or more than 100 Users !'
+                    six.print_('')
+                    six.print_(' Tip not submitted, please edit timemachine.ini .')
+                    six.print_(' You try to Tip', TipUsers, 'Users. ')
+                    six.print_(' Do not Tip less than 2 or more than 100 Users !')
         else:
-            print ''
-            print ' Minimum Tip not provided in timemachine.ini !'
-            print ' Please update section: Missing_API_Data, MinimumTipAmounts'
-        print ''
-        print ' ---------------------------------------------------------------------------'
+            six.print_('')
+            six.print_(' Minimum Tip not provided in timemachine.ini !')
+            six.print_(' Please update section: Missing_API_Data, MinimumTipAmounts')
+        six.print_('')
+        six.print_(' ---------------------------------------------------------------------------')
 
 
     def Pause(pause_seconds):
@@ -545,9 +545,9 @@ while True:
             sys.stdout.flush()
             time.sleep(1)
             pause_seconds -= 1
-        print('')
+        six.print_('')
 
-    print ''
+    six.print_('')
     Pause(SleepInterval)
-    print ''
-    print ' ---------------------------------------------------------------------------'
+    six.print_('')
+    six.print_(' ---------------------------------------------------------------------------')

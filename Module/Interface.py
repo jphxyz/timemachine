@@ -16,9 +16,9 @@ for section in config.sections():
         ConfDict[section][option] = config.get(section, option)
 
 if (len(ConfDict) == 0):
-    print " "
-    print " !!! ERROR !!!"
-    print " Interface.ini not found in 'config' directory!"
+    six.print_(" ")
+    six.print_(" !!! ERROR !!!")
+    six.print_(" Interface.ini not found in 'config' directory!")
     exit()
 
 TimeInterval = int(ConfDict['Main_Settings']['sleep_on_error'])
@@ -40,34 +40,33 @@ class Api:
         PublicKey = str(ConfDict['Cryptopia']['public_key']) 
         PrivateKey = str(ConfDict['Cryptopia']['private_key']) 
                 
-        def respond():
+        def respond(callback_req):
             repeat = 0
             while repeat <= repeats :
-                print self.timestamp, "/ Interface / Cryptopia:", str(self._action),
+                six.print_(self.timestamp, "/ Interface / Cryptopia:", str(self._action), end=' ')
                 y = Cryptopia(PublicKey, PrivateKey)
-                ExchangeData = request(y)
+                ExchangeData = callback_req(y)
                 json_data = json.loads(ExchangeData)
-                #print json_data
                 if (isinstance(json_data, (dict)) == True):
                     try:
                         if ( str(json_data['Success']) == "True" ):
                             repeat = repeats
-                            print ("/ Success:"), json_data['Success']
+                            six.print_(("/ Success:"), json_data['Success'])
                             return json_data
                         else:
                             repeat = repeat + 1
-                            print ("/ Success:"), json_data['Success'], (", try Task again in"), TimeInterval, ("sec.")
-                            print str(json_data)
+                            six.print_(("/ Success:"), json_data['Success'], (", try Task again in"), TimeInterval, ("sec."))
+                            six.print_(str(json_data))
                             time.sleep(TimeInterval)
                     except KeyError as e:
                         repeat = repeat + 1
-                        print ("/ Success: no, try Task again in"), TimeInterval, ("sec.")
-                        print "JSON", e, "->", str(ExchangeData), "<-"
+                        six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
+                        six.print_("JSON", e, "->", str(ExchangeData), "<-")
                         time.sleep(TimeInterval)                        
                 else:
                     repeat = repeat + 1
-                    print ("/ Success: no, try Task again in"), TimeInterval, ("sec.")
-                    print "no JSON data provided: ->", str(ExchangeData), "<-"
+                    six.print_(("/ Success: no, try Task again in"), TimeInterval, ("sec."))
+                    six.print_("no JSON data provided: ->", str(ExchangeData), "<-")
                     time.sleep(TimeInterval)
 
         ##### public access
@@ -76,9 +75,9 @@ class Api:
                 ExchangeData = y.GetCurrencies()
                 return ExchangeData
             if ( self.OutputFormat == "R"):
-                return respond()
+                return respond(request)
             elif ( self.OutputFormat == "F"):
-                ApiString = respond()
+                ApiString = respond(request)
                 self.FormatedList.update({'Currencies':[]})
                 for element in ApiString['Data']:
                     self.FormatedList['Currencies'].append([ str(element['Symbol']), int(element['Id']), str(element['Name']) ])
@@ -87,20 +86,20 @@ class Api:
             def request(y):
                 ExchangeData = y.GetTradePairs()
                 return ExchangeData
-            return respond()
+            return respond(request)
         if ( self._action == "GetMarkets" ):
             def request(y):
                 ExchangeData = y.GetMarkets()
                 return ExchangeData
-            return respond()
+            return respond(request)
         if ( self._action == "GetMarketSummaries" ):
             def request(y):
                 ExchangeData = y.GetMarkets()
                 return ExchangeData
             if ( self.OutputFormat == "R"):
-                return respond()
+                return respond(request)
             elif ( self.OutputFormat == "F"):
-                ApiString = respond()
+                ApiString = respond(request)
                 self.FormatedList.update({'MarketSummaries':{}})
                 for element in ApiString['Data']:
                     self.FormatedList['MarketSummaries'].update({str(element['TradePairId']):[str(element['Label']), float(element['AskPrice']), float(element['BidPrice'])]})
@@ -110,15 +109,15 @@ class Api:
             def request(y):
                 ExchangeData = y.GetMarket(self._Id)
                 return ExchangeData
-            return respond()
+            return respond(request)
         if ( self._action == "GetOrderbook" ):
             def request(y):
                 ExchangeData = y.GetMarketOrders(self._data[0], self._data[1])
                 return ExchangeData
             if ( self.OutputFormat == "R"):
-                return respond()
+                return respond(request)
             elif ( self.OutputFormat == "F"):
-                ApiString = respond()
+                ApiString = respond(request)
                 self.FormatedList.update({'BuyOrderbook':[],'SellOrderbook':[]})
                 count = 1
                 for element in ApiString['Data']['Buy']:
@@ -136,20 +135,20 @@ class Api:
             def request(y):
                 ExchangeData = y.SubmitTrade(self._data[0], self._data[1], round(self._data[2], 8), round(self._data[3], 8)) #0=Id, 1=Type, 2=Price, 3=Amount
                 return ExchangeData
-            return respond()
+            return respond(request)
         if ( self._action == "SubmitTip" ):
             def request(y):
                 ExchangeData = y.Tip(self._data[0], self._data[1], round(self._data[2], 8))
                 return ExchangeData
-            return respond()
+            return respond(request)
         if ( self._action == "GetBalances" ):
             def request(y):
                 ExchangeData = y.GetBalance(self._data)
                 return ExchangeData
             if ( self.OutputFormat == "R"):
-                return respond()
+                return respond(request)
             elif ( self.OutputFormat == "F"):
-                ApiString = respond()
+                ApiString = respond(request)
                 self.FormatedList.update({'Balances':{}})
                 for element in ApiString['Data']:
                     self.FormatedList['Balances'].update({str(element['Symbol']):[float(element['Available']), float(element['Total'])]})
