@@ -218,9 +218,8 @@ while True:
         six.print_('   ... found', c, 'Trade Routes across three Markets')
 
         ### get Markets Data and Routes
-        def searchMAX(Dict):
-             v=list(Dict.values())
-             return list(Dict.keys())[v.index(max(v))]
+        def searchMax(Dict):
+            return max(six.iterkeys(Dict), key=(lambda key: Dict[key]))
 
         def RouteCheck(Route, Data, Input):
             for element in Route:
@@ -432,8 +431,8 @@ while True:
             Repeat = 1
             while 1 == Repeat:
 
-                MaxProfit = searchMAX(NumProfit)
-                MaxProfitSelection = searchMAX(SelectionOfNumProfit)
+                MaxProfit = searchMax(NumProfit)
+                MaxProfitSelection = searchMax(SelectionOfNumProfit)
                 if (float(NumProfit[MaxProfit]) < float(SelectionOfNumProfit[MaxProfitSelection]) or float(MaxProfit) == 0.0 ):
                     Repeat = 0
                 else:
@@ -450,7 +449,7 @@ while True:
                     NumProfit.update({MaxProfit:0})
 
 
-            RouteNr = searchMAX(SelectionOfNumProfit)
+            RouteNr = searchMax(SelectionOfNumProfit)
             if ( int(RouteNr) >> 0 and float(SelectionOfNumProfit[RouteNr]) > 0.00000001):
                 MaxRouteDetails = NumRoutes[RouteNr]
                 routestr = '  ->  '.join(['%s/%s (%s)'%(e[0][0], e[0][1], e[1]) for e in MaxRouteDetails])
