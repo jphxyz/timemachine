@@ -14,8 +14,7 @@ wget https://github.com/jphxyz/timemachine/archive/master.zip
 unzip master.zip
 cd timemachine-master
 
-  [ EDIT timemachine.ini and Module/Interface.ini per instructions
-  in first post of https://www.cryptopia.co.nz/Forum/Thread/544 ]
+  [ Create config/timemachine.ini and config/Interface.ini ]
 
 python ./timemachine.py
 ```
