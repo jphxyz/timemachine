@@ -1,7 +1,0 @@
-[Main_Settings]
-Sleep_On_Error = 20
-Repeats_On_Error = 3
-
-[Cryptopia]
-Public_Key = YOUR_API_PUBLIC_KEY_HERE
-Private_Key = YOUR_API_PRIVATE_KEY_HERE

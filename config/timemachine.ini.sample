@@ -1,31 +1,43 @@
 [Main_Settings]
-Coin_To_BUY = BCH
+; Demo mode means that no actual orders will be placed
+; y/yes/1/true are all valid 'true' values here.
+Demo_Mode = true
+
+; Donation to support development
+; Units: %
+Donate_Percent = 0.1
+
+; Makes the whole thing seem more matrix-ish
+Gaudy_Startup_Sequence = true
+
+[Trade_Settings]
+; Exchange for this coin.
+Coin_To_BUY = ETH
+
+; Maximum number of trades to reach target coin
+Max_Trades = 3
+
+; Market buys are not supported by the API, so we have to guess at
+; a price limit which is likely to sell quickly.
+; Right now this is implemented by just over/under-shooting the
+; ask/bid rate by some percentage.
+; If you were more patient and optimistic you could make this zero,
+; or even negative, but you run the risk of the later trades in your
+; route changing against your favor in the mean time.
+; Units: %
+Rate_Overshoot = 0.5
+
+; Sell only a percentage of available coins?
+; Units: %
 Sell_Percent_Of_Available_Balance = 100
-Sleep_Minutes = 90
 
-[Demo_Mode]
-Active = 1
-
-[Submit_Tip]
-Active = 0
-Coin = DOT
-Tip_Amount_per_User = 50
-To_Last_Active_Users = 3
-
-[Missing_API_Data]
-BaseMinTrade = { "BTC": 0.0005, "LTC": 0.01, "DOGE": 10.0, "NZDT": 1.0 }
-SuspendedMarkets = ["XPL", "TRL", "HTML5"]
-TradeFee = 0.2
-MinimumTipAmounts = { "DOT": 50 }
-
-[Coins_To_SELL_and_Stop_at_Balance]
-SYMBOL = BALANCE
-BTC = 2.5
-DGB = 0
-MZC = 1.0
-PPC = 0
-ZET = 0
-XMY = 0
-NMC = 0
-TRC = 0
-UNO = 0
+[Cryptopia]
+Public_Key  = YOUR_PUBLIC_KEY_HERE
+Private_Key = YOUR_PRIVATE_KEY_HERE
+ 
+[Keep_Balance]
+; If you'd like to keep a balance of any coin, list it here
+; in a 'COIN = BALANCE' pair.
+; e.g. if I wanted to never have less than 1.5 LTC, then I
+; would add a line like
+; LTC = 1.5
